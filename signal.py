@@ -13,18 +13,28 @@ class CSVSignal:
         #self.df = self.df.append(pd.read_csv(filenames[1], names = ["ts", "val"]), sort = False)
         
         for file in filenames:
-            self.df = self.df.append(pd.read_csv(file, names = ["ts", "val"]), sort= False)
+            self.df = self.df.append(pd.read_csv(file, names = ["ts", "val"]), ignore_index = True, sort= False)
         
         self.signal_count = 0   #tracks for next
 		
     def next (self):
         signal = Signal (self.df.ts[self.signal_count:self.signal_count+self.batchsize], self.df.val[self.signal_count:self.signal_count+self.batchsize])
         self.signal_count+=self.batchsize
+        #print(signal.ts)
         return signal
+
+def normalize(signal):
+    return None
+
+def resample(signal):
+    return None
 
 if __name__ == "__main__":
     filenames = ["ex1.csv", "ex2.csv", "ex3.csv"]
     signals = CSVSignal(filenames, 2)
-    print(signals.df)
-    e = CSVSignal.next
+    #print(signals.df)
+    e = signals.next()
+    print(type(e.val))
+    s = signals.next()
+    print(s.ts)
 	
