@@ -1,5 +1,5 @@
 import pandas as pd
-
+from scipy import signal
 class Signal:
     def __init__(self, ts, val):
         self.ts = ts
@@ -23,11 +23,14 @@ class CSVSignal:
         #print(signal.ts)
         return signal
 
-def normalize(signal):
-    return None
+def normalize(signal, transfer):   #transfer is array for denom of transfer function?
+    return signal.normalize(signal, transfer)
 
-def resample(signal):
-    return None
+def resample(signal, num):
+    return signal.resample(signal, num)
+
+def filter(signal):
+     
 
 if __name__ == "__main__":
     filenames = ["ex1.csv", "ex2.csv", "ex3.csv"]
