@@ -1,8 +1,10 @@
 import pandas as pd
-from biosppy import signals
-from biosppy.signals import tools
+import numpy as np
+#import biosppy
+#from biosppy import signals
+#from biosppy.signals import tools
 from csv import reader
-#from scipy import signal
+from sklearn.preprocessing import StandardScaler
 
 class Signal:
     def __init__(self, ts, val):
@@ -10,8 +12,8 @@ class Signal:
         self.val = val
 
 class CSVSignal:
-    def __init__(self, filenames, period,  batchsize = 10):
-        self.batchsize = batchsize
+    def __init__(self, filenames, period,  windowsize = 10):
+        self.windowsize = windowsize
         self.period = period
         count = 0
         self.df = pd.DataFrame(columns = ["ts","val"])
@@ -25,21 +27,25 @@ class CSVSignal:
                         count+=self.period
                     self.df.loc[count/self.period] = row
                     count+=self.period
-        self.signal_count = 0   #tracks for next
+        self.signal_count = 0   #tracks for next Signal object
 		
     def next (self):
-        if all(v is None for v in self.df.val[self.signal_count:self.signal_count+self.batchsize].tolist()):
+        if all(v is None for v in self.df.val[self.signal_count:self.signal_count+self.windowsize].tolist()):
             return 
-        signal = Signal (self.df.ts[self.signal_count:self.signal_count+self.batchsize].tolist(), self.df.val[self.signal_count:self.signal_count+self.batchsize].tolist())
+        signal = Signal (self.df.ts[self.signal_count:self.signal_count+self.windowsize].tolist(), self.df.val[self.signal_count:self.signal_count+self.windowsize].tolist())
         self.signal_count+=self.batchsize
         #print(signal.ts)
         if (None in signal.val):
             signal = fillmean(signal)
         return signal
 
-#def normalize(signal, transfer):   #transfer is array for denom of transfer function?
-    #use _scale_amplitude
-    #use mean and standard deviation to normalize
+def normalize(signal):
+    l = np.array(signal.val)
+    scaler = StandardScaler()
+    scaler = scaler.fit(l.reshape(-1, 1))
+    signal.val = scaler.transform(l.reshape(-1, 1)).reshape(-1,)
+    signal.val = list(l)
+    return signal
 
 def resample(signal, num):
     for i in range(len(signal.ts)):
@@ -47,15 +53,15 @@ def resample(signal, num):
         signal.val[i] = float(signal.val[i])
     index = pd.date_range('1/1/2000', periods=len(signal.ts), freq='T')
     series = pd.Series(signal.ts, index=index)
-    series = series.resample(str(num)+'S').mean()
+    series = series.resample(str(num)+'T').mean()
     signal.ts = series.tolist()
     series = pd.Series(signal.val, index=index)
-    series = series.resample(str(num)+'S').mean()
+    series = series.resample(str(num)+'T').mean()
     signal.val = series.tolist()
     return signal
 
 def passfilter(signal):
-    signal.val = tools.filter_signal(signal.val, 'FIR', 'bandpass')
+    #signal.val = tools.filter_signal(signal.val, 'FIR', 'bandpass')
     return signal
     
 def join_streams(stream1, stream2):
@@ -67,21 +73,19 @@ def join_streams(stream1, stream2):
             count1+=1
             count2+=1
         elif (stream1[count1].ts[0] < stream2[count2].ts[0]):
-            index = count1
             while (stream1[index].ts[0]!= stream2[count2].ts[0] and index < len(stream1)):
-                index+=1
+                count1+=1
             if index <len(stream1):
                 joined.append(join(stream1[index], stream2[count2]))
                 count2+=1
-                count1 = index+1
+                count1+=1
         elif (stream1[count1].ts[0] > stream2[count2].ts[0]):
-            index = count2
             while (stream2[index].ts[0]!= stream1[count1].ts[0] and index < len(stream2)):
-                index+=1
+                count2+=1
             if index <len(stream2):
                 joined.append(join(stream1[count1], stream2[index]))
                 count1+=1
-                count2 = index+1
+                count2+=1
     return joined
 
 def join(signal1, signal2):
