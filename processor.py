@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-#import biosppy
 #from biosppy import signals
 #from biosppy.signals import tools
 from csv import reader
@@ -33,7 +32,7 @@ class CSVSignal:
         if all(v is None for v in self.df.val[self.signal_count:self.signal_count+self.windowsize].tolist()):
             return 
         signal = Signal (self.df.ts[self.signal_count:self.signal_count+self.windowsize].tolist(), self.df.val[self.signal_count:self.signal_count+self.windowsize].tolist())
-        self.signal_count+=self.batchsize
+        self.signal_count+=self.windowsize
         #print(signal.ts)
         if (None in signal.val):
             signal = fillmean(signal)
