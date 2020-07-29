@@ -73,16 +73,16 @@ def join_streams(stream1, stream2):
             count1+=1
             count2+=1
         elif (stream1[count1].ts[0] < stream2[count2].ts[0]):
-            while (stream1[index].ts[0]!= stream2[count2].ts[0] and index < len(stream1)):
+            while (stream1[count1].ts[0]!= stream2[count2].ts[0] and count1 < len(stream1)):
                 count1+=1
-            if index <len(stream1):
+            if count1 <len(stream1):
                 joined.append(join(stream1[index], stream2[count2]))
                 count2+=1
                 count1+=1
         elif (stream1[count1].ts[0] > stream2[count2].ts[0]):
-            while (stream2[index].ts[0]!= stream1[count1].ts[0] and index < len(stream2)):
+            while (stream2[count2].ts[0]!= stream1[count1].ts[0] and count2 < len(stream2)):
                 count2+=1
-            if index <len(stream2):
+            if count2 <len(stream2):
                 joined.append(join(stream1[count1], stream2[index]))
                 count1+=1
                 count2+=1
