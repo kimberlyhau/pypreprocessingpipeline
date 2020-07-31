@@ -1,10 +1,11 @@
 import pandas as pd
 import numpy as np
-#from biosppy import signals
-#from biosppy.signals import tools
+from biosppy import signals
+from biosppy.signals import tools
 from csv import reader
 from sklearn.preprocessing import StandardScaler
-
+#from scipy import signal
+import scipy
 class Signal:
     def __init__(self, ts, val):
         self.ts = ts
@@ -59,9 +60,16 @@ def resample(signal, num):
     signal.val = series.tolist()
     return signal
 
-def passfilter(signal):
-    #signal.val = tools.filter_signal(signal.val, 'FIR', 'bandpass')
+def passfilter(signal, fs, freq1, freq2):
+    """Filter raw ECG waveform with bandpass finite-impulse-response filter."""
+    # Calculate filter order
+    order = int(0.3 * fs)
+
+    # Filter waveform
+    signal.val, _, _ = tools.filter_signal(signal=signal.val, ftype='FIR', band='bandpass', order=order,
+                                       frequency=(freq1, freq2), sampling_rate=fs)
     return signal
+
     
 def join_streams(stream1, stream2):
     count1, count2 = 0, 0
@@ -97,6 +105,7 @@ def join(signal1, signal2):
     return joined 
             
 def fillmean(signal):
+    """
     mean = 0     
     count = 0
     for value in signal.val:
@@ -108,13 +117,17 @@ def fillmean(signal):
         if signal.val[i] == None:
             signal.val[i] = mean
     return signal
-            
+    """
+    mean = sum(filter(None, signal.val))/(len(signal.val)-signal.val.count(None))
+    signal.val = [mean if x== None else x for x in signal.val]
+    return signal
+
+def resample2(signal, num):
+    signal.val = list(scipy.signal.resample(np.array(signal.val), num))
+    return signal
+        
 if __name__ == "__main__":
     filenames = ["ex1.csv", "ex2.csv", "ex3.csv"]
     #signals = CSVSignal(filenames, 2, 2)
-    s1 = Signal([1,2,3,4,5,6],[1,2,3,4,5,6])
-    print(filter(s1).val)
-    #print(resample(s1,30).ts)
-    #print(resample(s1,30).val)
-    s2 = Signal([1,2,3,4,5,6],[1,2,3,4,5,6])
-    #print(join(s1, s2).val)
+    s2 = Signal([1,2,3,4,5,6],[1,2,3])
+    print(resample2(s2, 6).val)
